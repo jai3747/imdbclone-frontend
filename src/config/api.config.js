@@ -2,7 +2,7 @@
 // src/config/api.config.js
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://34.47.168.225:5000';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
