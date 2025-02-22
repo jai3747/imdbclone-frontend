@@ -1,3 +1,4 @@
+// app.js
 import './App.css';
 import { ThemeProvider } from '@emotion/react';
 import { 
@@ -8,57 +9,27 @@ import {
   createTheme,
   CircularProgress,
   Snackbar,
-  Alert,
-  Chip
+  Alert 
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AddMovie from './AddMovie';
 import Movie from './Movie';
 import AddActor from './AddActor';
 import AddProducer from './AddProducer';
 import EditMovies from './EditMovies';
-import { api } from './config/api.config';
 
 function App() {
   const [mode, setMode] = useState(() => localStorage.getItem('theme') || "dark");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [backendStatus, setBackendStatus] = useState('unknown');
   const navigate = useNavigate();
 
   useEffect(() => {
     localStorage.setItem('theme', mode);
   }, [mode]);
-
-  // Check backend status on load and periodically
-  useEffect(() => {
-    const checkBackendStatus = async () => {
-      try {
-        const response = await api.health.checkLiveness();
-        if (response.status === 200) {
-          setBackendStatus('online');
-        } else {
-          setBackendStatus('error');
-        }
-      } catch (error) {
-        console.error("Backend health check failed:", error);
-        setBackendStatus('offline');
-      }
-    };
-
-    // Check immediately
-    checkBackendStatus();
-    
-    // Set up periodic check
-    const intervalId = setInterval(checkBackendStatus, 60000); // Check every minute
-    
-    return () => clearInterval(intervalId);
-  }, []);
 
   const theme = createTheme({
     palette: {
@@ -89,42 +60,6 @@ function App() {
     { path: "/add-actor", label: "Add Actor" },
     { path: "/add-producer", label: "Add Producer" },
   ];
-
-  const getStatusChip = () => {
-    switch (backendStatus) {
-      case 'online':
-        return <Chip 
-          icon={<CheckCircleIcon />} 
-          label="Backend Online" 
-          color="success" 
-          size="small" 
-          sx={{ ml: 2 }}
-        />;
-      case 'offline':
-        return <Chip 
-          icon={<CloudOffIcon />} 
-          label="Backend Offline" 
-          color="error" 
-          size="small"
-          sx={{ ml: 2 }}
-        />;
-      case 'error':
-        return <Chip 
-          icon={<CloudOffIcon />} 
-          label="Backend Error" 
-          color="warning" 
-          size="small"
-          sx={{ ml: 2 }}
-        />;
-      default:
-        return <Chip 
-          label="Checking Status..." 
-          color="default" 
-          size="small"
-          sx={{ ml: 2 }}
-        />;
-    }
-  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -158,8 +93,6 @@ function App() {
               </Button>
             ))}
 
-            {getStatusChip()}
-
             <Button
               sx={{ marginLeft: "auto" }}
               startIcon={mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
@@ -183,34 +116,6 @@ function App() {
           </div>
         )}
 
-        {backendStatus === 'offline' && (
-          <div style={{
-            padding: '20px',
-            margin: '20px',
-            backgroundColor: theme.palette.error.light,
-            color: theme.palette.error.contrastText,
-            borderRadius: '4px',
-            textAlign: 'center'
-          }}>
-            <h3>Backend Service Unavailable</h3>
-            <p>Cannot connect to backend API. Some features may not work correctly.</p>
-            <Button 
-              variant="contained" 
-              color="primary"
-              onClick={() => {
-                setBackendStatus('unknown');
-                setTimeout(() => {
-                  api.health.checkLiveness()
-                    .then(() => setBackendStatus('online'))
-                    .catch(() => setBackendStatus('offline'));
-                }, 1000);
-              }}
-            >
-              Retry Connection
-            </Button>
-          </div>
-        )}
-
         <Routes>
           <Route
             path="/"
@@ -229,7 +134,7 @@ function App() {
             element={<AddProducer setLoading={setLoading} onError={handleError} />}
           />
           <Route
-            path="/movies/edit/:id"
+            path="movies/edit/:id"
             element={<EditMovies setLoading={setLoading} onError={handleError} />}
           />
         </Routes>

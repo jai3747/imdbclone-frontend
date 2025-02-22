@@ -1,22 +1,29 @@
-// src/components/AddActor.js
 import React, { useState } from "react";
-import { Button, TextField, FormControl, InputLabel, MenuItem, Select, Box, Container, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 import { useNavigate } from "react-router-dom";
+import { API, backend_API } from "./global";
 import { useFormik } from "formik";
 import * as yup from "yup";
+import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { api } from "./config/api.config";
+import { DatePicker , LocalizationProvider } from "@mui/x-date-pickers";
+import axios from "axios";
 
 function AddActor() {
   const navigate = useNavigate();
   const [gender, setGender] = useState("");
 
-  const validationSchema = yup.object({
-    name: yup.string().required("Name is required").min(3, "Name must be at least 3 characters"),
-    bio: yup.string().required("Bio is required").min(5, "Bio must be at least 5 characters"),
-    image: yup.string().required("Image URL is required").min(5, "Image URL must be at least 5 characters"),
-    DOB: yup.date().required("Date of Birth is required").nullable(),
+  const handleGenderChange = (e) => {
+    const { value } = e.target;
+    setGender(value);
+  };
+
+  const movieValidationSchema = yup.object({
+    name: yup.string().required("*Name field is mandatory").min(3),
+    bio: yup.string().required("*Bio field is mandatory").min(5),
+    image: yup.string().required("*Image field is mandatory").min(5),
+    DOB: yup.date().required("*DOB  is mandatory"),
   });
 
   const formik = useFormik({
@@ -26,108 +33,90 @@ function AddActor() {
       image: "",
       DOB: null,
     },
-    validationSchema,
-    onSubmit: async (values) => {
-      try {
-        const date = values.DOB.toISOString().slice(0, 10);
-        await api.actors.add({ ...values, gender, DOB: date });
-        navigate("/add-movies");
-      } catch (error) {
-        console.error("Error adding actor:", error);
-        // Handle error appropriately
-      }
+    validationSchema: movieValidationSchema,
+    onSubmit: async(newActor) => {
+      const date = formik.values.DOB.toISOString().slice(0,10) 
+      // console.log("onSubmit : ", { ...newActor, gender,DOB: date });
+      const res = await axios.post(`${backend_API}/actors/add-actor`,{ ...newActor, gender,DOB: date });
+      navigate("/add-movies")
     },
   });
 
   return (
-    <Container maxWidth="sm">
-      <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Add New Actor
-        </Typography>
-
+    <>
+      <form onSubmit={formik.handleSubmit} className="formGroup">
         <TextField
-          fullWidth
+          label="Enter the Actor name"
+          variant="outlined"
           id="name"
           name="name"
-          label="Name"
           value={formik.values.name}
           onChange={formik.handleChange}
-          error={formik.touched.name && Boolean(formik.errors.name)}
-          helperText={formik.touched.name && formik.errors.name}
-          margin="normal"
+          onBlur={formik.handleBlur}
+          error={formik.touched.name && formik.errors.name}
+          helperText={
+            formik.touched.name && formik.errors.name ? formik.errors.name : ""
+          }
         />
-
         <TextField
-          fullWidth
+          label="Enter the bio"
+          variant="outlined"
           id="bio"
           name="bio"
-          label="Bio"
-          multiline
-          rows={4}
           value={formik.values.bio}
           onChange={formik.handleChange}
-          error={formik.touched.bio && Boolean(formik.errors.bio)}
-          helperText={formik.touched.bio && formik.errors.bio}
-          margin="normal"
+          onBlur={formik.handleBlur}
+          error={formik.touched.bio && formik.errors.bio}
+          helperText={
+            formik.touched.bio && formik.errors.bio ? formik.errors.bio : ""
+          }
         />
-
         <TextField
-          fullWidth
+          label="Enter the image link"
+          variant="outlined"
           id="image"
           name="image"
-          label="Image URL"
           value={formik.values.image}
           onChange={formik.handleChange}
-          error={formik.touched.image && Boolean(formik.errors.image)}
-          helperText={formik.touched.image && formik.errors.image}
-          margin="normal"
+          onBlur={formik.handleBlur}
+          error={formik.touched.image && formik.errors.image}
+          helperText={
+            formik.touched.image && formik.errorimage ? formik.errors.image : ""
+          }
         />
-
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker
-            label="Date of Birth"
-            value={formik.values.DOB}
-            onChange={(newValue) => formik.setFieldValue("DOB", newValue)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="normal"
-                error={formik.touched.DOB && Boolean(formik.errors.DOB)}
-                helperText={formik.touched.DOB && formik.errors.DOB}
-              />
-            )}
-          />
+          <FormControl fullWidth>
+            <DatePicker 
+              id="DOB"
+              name="DOB"
+              value={formik.values.DOB}
+              onChange={(newValue) => formik.setFieldValue("DOB", newValue)}
+            //   label="Date of Birth"
+              error={formik.touched.DOB && Boolean(formik.errors.DOB)}
+              helperText={formik.touched.DOB && formik.errors.DOB}
+            />
+          </FormControl>
         </LocalizationProvider>
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="gender-label">Gender</InputLabel>
+        <FormControl fullWidth>
+          <InputLabel id="gender">Gender</InputLabel>
           <Select
-            labelId="gender-label"
+            labelId="gender"
             id="gender"
             value={gender}
-            label="Gender"
-            onChange={(e) => setGender(e.target.value)}
+            label="gender"
+            onChange={handleGenderChange}
           >
-            <MenuItem value="Male">Male</MenuItem>
-            <MenuItem value="Female">Female</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
+            <MenuItem value={"male"}>Male</MenuItem>
+            <MenuItem value={"female"}>Female</MenuItem>
+            <MenuItem value={"others"}>Others</MenuItem>
           </Select>
         </FormControl>
 
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          fullWidth
-          size="large"
-          sx={{ mt: 3, mb: 2 }}
-        >
+        <Button variant="contained" type="submit">
           Add Actor
         </Button>
-      </Box>
-    </Container>
+      </form>
+    </>
   );
 }
 
